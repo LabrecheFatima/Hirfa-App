@@ -1,28 +1,39 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ticketService } from '../services/ticketService';
+import { useAuth } from './useAuth';
+import type { ListTicketResponseDto } from '../types';
 
 export const useTickets = () => {
-  // Fetch tickets owned by the authenticated user
-  const myTicketsQuery = useQuery({
+  const { authenticated } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['my-tickets'],
     queryFn: ticketService.getUserTickets,
+    // Only execute API request if the user is authenticated
+    enabled: !!authenticated,
   });
 
-  // Purchase ticket / initiate payment checkout
   const purchaseMutation = useMutation({
     mutationFn: (ticketTypeId: string) => ticketService.purchaseTicket(ticketTypeId),
-    onSuccess: (response) => {
-      // If the backend DTO returns a payment redirect URL (Chargily)
-      if (response && 'checkoutUrl' in response && typeof response.checkoutUrl === 'string') {
-        window.location.href = response.checkoutUrl;
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
       }
     },
   });
 
+  const tickets: ListTicketResponseDto[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as any)?.content)
+    ? (data as any).content
+    : [];
+
   return {
-    tickets: myTicketsQuery.data ?? [],
-    isLoading: myTicketsQuery.isLoading,
-    isError: myTicketsQuery.isError,
+    tickets,
+    isLoading,
+    isError,
     purchaseTicket: purchaseMutation.mutateAsync,
     isPurchasing: purchaseMutation.isPending,
   };

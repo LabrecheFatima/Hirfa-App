@@ -11,19 +11,23 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between border-b pb-3">
-          {title && <h3 className="text-lg font-semibold text-gray-900">{title}</h3>}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl bg-white shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 focus:outline-none rounded-md p-1"
-            aria-label="Close modal"
+          className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
           >
             ✕
           </button>
         </div>
-        <div className="mt-4">{children}</div>
+
+        {/* Scrollable Body */}
+        <div className="overflow-y-auto p-6">
+          {children}
+        </div>
       </div>
     </div>
   );

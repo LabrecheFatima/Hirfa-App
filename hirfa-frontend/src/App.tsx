@@ -5,11 +5,18 @@ import { RoleGuard } from './components/protected/RoleGuard';
 import { PageWrapper } from './components/layout/PageWrapper';
 import { Role } from './types';
 
-// Pages
-import { EventCatalog } from './pages/EventCatalog';
-import { MyTickets } from './pages/MyTickets';
-import { InstructorEvents } from './pages/InstructorEvents';
-import { StaffScanner } from './pages/StaffScanner';
+// Public Pages
+import { LandingPage } from './pages/public/LandingPage';
+import { CourseCatalog } from './pages/public/CourseCatalog';
+
+// Attendee Pages
+import { MyTickets } from './pages/attendee/MyTickets';
+
+// Organizer Pages
+import { CourseManagement } from './pages/organizer/CourseManagement';
+
+// Staff Pages
+import { QRScanner } from './pages/staff/QRScanner';
 
 export function App() {
   return (
@@ -20,7 +27,7 @@ export function App() {
           path="/"
           element={
             <PageWrapper>
-              <EventCatalog />
+              <LandingPage />
             </PageWrapper>
           }
         />
@@ -28,7 +35,15 @@ export function App() {
           path="/events"
           element={
             <PageWrapper>
-              <EventCatalog />
+              <CourseCatalog />
+            </PageWrapper>
+          }
+        />
+        <Route
+          path="/courses"
+          element={
+            <PageWrapper>
+              <CourseCatalog />
             </PageWrapper>
           }
         />
@@ -36,7 +51,7 @@ export function App() {
         {/* Authenticated Routes */}
         <Route element={<ProtectedRoute />}>
           {/* Attendee Routes */}
-          <Route element={<RoleGuard allowedRoles={[Role.ATTENDEE, Role.ORGANISER, Role.ADMIN]} />}>
+          <Route element={<RoleGuard allowedRoles={[Role.ATTENDEE, Role.ORGANISER]} />}>
             <Route
               path="/my-tickets"
               element={
@@ -47,32 +62,32 @@ export function App() {
             />
           </Route>
 
-          {/* Organiser / Instructor Routes */}
-          <Route element={<RoleGuard allowedRoles={[Role.ORGANISER, Role.INSTRUCTOR, Role.ADMIN]} />}>
+          {/* Organiser Routes */}
+          <Route element={<RoleGuard allowedRoles={[Role.ORGANISER]} />}>
             <Route
               path="/organiser/events"
               element={
                 <PageWrapper showSidebar>
-                  <InstructorEvents />
+                  <CourseManagement />
                 </PageWrapper>
               }
             />
           </Route>
 
           {/* Staff Routes */}
-          <Route element={<RoleGuard allowedRoles={[Role.STAFF, Role.ORGANISER, Role.ADMIN]} />}>
+          <Route element={<RoleGuard allowedRoles={[Role.STAFF, Role.ORGANISER]} />}>
             <Route
               path="/staff/scanner"
               element={
                 <PageWrapper showSidebar>
-                  <StaffScanner />
+                  <QRScanner />
                 </PageWrapper>
               }
             />
           </Route>
         </Route>
 
-        {/* Unauthorized / Fallback */}
+        {/* Fallback */}
         <Route
           path="/unauthorized"
           element={

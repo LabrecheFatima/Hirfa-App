@@ -1,35 +1,27 @@
-import api from './api';
-import type { 
-  CreateEventRequestDto, 
-  CreateEventResponseDto, 
-  Event, 
-  UpdateEventRequestDto, 
-  UpdateEventResponseDto 
+import axiosInstance from './axioInstance';
+import type {
+  ListPublishedEventResponseDto,
+  ListEventResponseDto,
+  CreateEventRequestDto,
+  CreateEventResponseDto,
 } from '../types';
 
 export const eventService = {
-  getPublishedEvents: async (): Promise<Event[]> => {
-    const response = await api.get('/published-events');
+  // Public Catalog Endpoint
+  getPublishedEvents: async (): Promise<ListPublishedEventResponseDto[]> => {
+    const response = await axiosInstance.get('/api/v1/published-events');
     return response.data;
   },
 
-  getPublishedEventById: async (id: string): Promise<Event> => {
-    const response = await api.get(`/published-events/${id}`);
+  // Organiser Dashboard Endpoint (includes event 'status')
+  getEvents: async (): Promise<ListEventResponseDto[]> => {
+    const response = await axiosInstance.get('/api/v1/events');
     return response.data;
   },
 
-  getOrganiserEvents: async (): Promise<Event[]> => {
-    const response = await api.get('/events');
-    return response.data;
-  },
-
-  createEvent: async (dto: CreateEventRequestDto): Promise<CreateEventResponseDto> => {
-    const response = await api.post('/events', dto);
-    return response.data;
-  },
-
-  updateEvent: async (id: string, dto: UpdateEventRequestDto): Promise<UpdateEventResponseDto> => {
-    const response = await api.put(`/events/${id}`, dto);
+  // Organiser Create Event Endpoint
+  createEvent: async (data: CreateEventRequestDto): Promise<CreateEventResponseDto> => {
+    const response = await axiosInstance.post('/api/v1/events', data);
     return response.data;
   },
 };

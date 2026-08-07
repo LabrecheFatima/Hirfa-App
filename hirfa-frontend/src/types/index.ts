@@ -1,42 +1,56 @@
 // Keycloak Roles
-export enum Role {
-  ATTENDEE = 'ATTENDEE_ROLE',
-  ORGANISER = 'ORGANISER_ROLE',
-  STAFF = 'STAFF_ROLE',
-}
+export const Role = {
+  ATTENDEE : 'ATTENDEE_ROLE',
+  ORGANISER : 'ORGANISER_ROLE',
+  STAFF : 'STAFF_ROLE',
+} as const;
+export type Role = (typeof Role)[keyof typeof Role];
 
-// Enums matching com.advance.hirfa.domaine.entities
-export enum EventStatusEnum {
-  DRAFT = 'DRAFT',
-  PUBLISHED = 'PUBLISHED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-}
+export const EventStatusEnum = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+export type EventStatusEnum = (typeof EventStatusEnum)[keyof typeof EventStatusEnum];
 
-export enum TicketStatusEnum {
-  PENDING_PAYMENT = 'PENDING_PAYMENT',
-  PURCHASED = 'PURCHASED',
-  PAYMENT_FAILED = 'PAYMENT_FAILED',
-  CANCELLED = 'CANCELLED',
-}
+export const TicketStatusEnum = {
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  PURCHASED: 'PURCHASED',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+export type TicketStatusEnum = (typeof TicketStatusEnum)[keyof typeof TicketStatusEnum];
 
-export enum TicketValidationEnum {
-  VALID = 'VALID',
-  INVALID = 'INVALID',
-  EXPIRED = 'EXPIRED',
-}
+export const QrCodeStatusEnum = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+} as const;
+export type QrCodeStatusEnum = (typeof QrCodeStatusEnum)[keyof typeof QrCodeStatusEnum];
 
-export enum TicketValidationMethod {
-  QR_SCAN = 'QR_SCAN',
-  MANUAL = 'MANUAL',
-}
+export const TicketValidationEnum = {
+  VALID: 'VALID',
+  INVALID: 'INVALID',
+  EXPIRED: 'EXPIRED',
+} as const;
+export type TicketValidationEnum = (typeof TicketValidationEnum)[keyof typeof TicketValidationEnum];
 
-// Core Entity Interfaces
+export const TicketValidationMethod = {
+  QR_SCAN: 'QR_SCAN',
+  MANUAL: 'MANUAL',
+} as const;
+export type TicketValidationMethod = (typeof TicketValidationMethod)[keyof typeof TicketValidationMethod];
+
+// ==========================================
+// 2. DOMAIN ENTITY INTERFACES
+// ==========================================
+
 export interface User {
   id: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
+  name: string;
+  email: string;
+  createAt?: string;
+  updateAt?: string;
   roles?: Role[];
 }
 
@@ -53,16 +67,31 @@ export interface TicketType {
 export interface Event {
   id: string;
   name: string;
-  venue: string;
   start?: string;
   end?: string;
+  venue: string;
   salesStart?: string;
   salesEnd?: string;
   status: EventStatusEnum;
-  organizer?: User;
   ticketTypes?: TicketType[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface QrCode {
+  id: string;
+  status: QrCodeStatusEnum;
+  value: string;
+  createAt?: string;
+  updateAt?: string;
+}
+
+export interface TicketValidation {
+  id: string;
+  status: TicketValidationEnum;
+  validationMethod: TicketValidationMethod;
+  createAt: string;
+  updateAt?: string;
 }
 
 export interface Ticket {
@@ -70,11 +99,17 @@ export interface Ticket {
   status: TicketStatusEnum;
   chargilyCheckoutId?: string;
   ticketType?: TicketType;
+  validation?: TicketValidation[];
+  qrCodes?: QrCode[];
   createAt?: string;
   updateAt?: string;
 }
 
-// DTOs matching Spring Boot Controllers
+// ==========================================
+// 3. API DTO INTERFACES
+// ==========================================
+
+// --- Event DTOs ---
 export interface CreateTicketTypeRequestDto {
   name: string;
   price: number;
@@ -112,12 +147,22 @@ export interface CreateEventResponseDto {
   salesStart?: string;
   salesEnd?: string;
   status: EventStatusEnum;
-  ticketTypes: CreateTicketTypeResponseDto[];
+  ticketTypes?: CreateTicketTypeResponseDto[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface UpdateEventRequestDto {
+export interface GetEventTicketTypeResponseDto {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  totalAvailable?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface GetEventDetailsResponseDto {
   id: string;
   name: string;
   start?: string;
@@ -126,10 +171,36 @@ export interface UpdateEventRequestDto {
   salesStart?: string;
   salesEnd?: string;
   status: EventStatusEnum;
-  ticketTypes: CreateTicketTypeRequestDto[];
+  ticketTypes: GetEventTicketTypeResponseDto[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface UpdateEventResponseDto {
+export interface GetPublishedEventTicketTypeResponseDto {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+}
+
+export interface GetPublishedEventDetailsResponseDto {
+  id: string;
+  name: string;
+  start?: string;
+  end?: string;
+  venue: string;
+  ticketType: GetPublishedEventTicketTypeResponseDto[];
+}
+
+export interface ListEventTicketTypeResponseDto {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  totalAvailable?: number;
+}
+
+export interface ListEventResponseDto {
   id: string;
   name: string;
   start?: string;
@@ -138,9 +209,24 @@ export interface UpdateEventResponseDto {
   salesStart?: string;
   salesEnd?: string;
   status: EventStatusEnum;
-  ticketTypes: UpdateTicketTypeResponseDto[];
-  createdAt?: string;
-  updatedAt?: string;
+  ticketTypes: ListEventTicketTypeResponseDto[];
+}
+
+export interface ListPublishedEventResponseDto {
+  id: string;
+  name: string;
+  start?: string;
+  end?: string;
+  venue: string;
+}
+
+// --- Ticket Type Management DTOs ---
+export interface UpdateTicketTypeRequestDto {
+  id?: string;
+  name: string;
+  price: number;
+  description?: string;
+  totalAvailable?: number;
 }
 
 export interface UpdateTicketTypeResponseDto {
@@ -151,6 +237,19 @@ export interface UpdateTicketTypeResponseDto {
   totalAvailable?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// --- Ticket DTOs ---
+export interface ListTicketTypeResponseDto {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface ListTicketResponseDto {
+  id: string;
+  status: TicketStatusEnum;
+  ticketType: ListTicketTypeResponseDto;
 }
 
 export interface GetTicketResponseDto {
@@ -164,12 +263,12 @@ export interface GetTicketResponseDto {
   eventEnd?: string;
 }
 
-export interface ListTicketResponseDto {
-  id: string;
-  status: TicketStatusEnum;
-  ticketType?: TicketType;
+export interface PurchaseTicketResponseDto {
+  ticketId: string;
+  checkoutUrl?: string;
 }
 
+// --- Validation DTOs ---
 export interface TicketValidationRequestDto {
   id: string;
   method: TicketValidationMethod;
@@ -180,7 +279,22 @@ export interface TicketValidationResponseDto {
   status: TicketValidationEnum;
 }
 
-export interface PurchaseTicketResponseDto {
-  ticketId: string;
-  checkoutUrl: string;
+// --- Chargily Payment DTOs ---
+export interface ChargilyCheckoutRequestDto {
+  amount: number;
+  currency: string;
+  successUrl: string;
+  failureUrl: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ChargilyCheckoutResponseDto {
+  id: string;
+  status: string;
+  checkoutUrl?: string;
+}
+
+// --- Common / Error DTO ---
+export interface ErrorDto {
+  error: string;
 }

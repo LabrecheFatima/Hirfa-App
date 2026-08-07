@@ -1,36 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '../services/eventService';
-import type { CreateEventRequestDto } from '../types';
+import type { ListEventResponseDto, CreateEventRequestDto } from '../types';
 
 export const useEvents = () => {
   const queryClient = useQueryClient();
 
-  const eventsQuery = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['events'],
-    queryFn: eventService.getPublishedEvents,
+    queryFn: eventService.getEvents,
   });
 
-  const createEventMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: (newEvent: CreateEventRequestDto) => eventService.createEvent(newEvent),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['published-events'] });
     },
   });
 
-  return {
-    events: eventsQuery.data ?? [],
-    isLoading: eventsQuery.isLoading,
-    isError: eventsQuery.isError,
-    error: eventsQuery.error, // Added missing error property
-    createEvent: createEventMutation.mutateAsync,
-    isCreating: createEventMutation.isPending,
-  };
-};
+  const events: ListEventResponseDto[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as any)?.content)
+    ? (data as any).content
+    : [];
 
-export const useEventDetails = (eventId: string) => {
-  return useQuery({
-    queryKey: ['events', eventId],
-    queryFn: () => eventService.getPublishedEventById(eventId),
-    enabled: Boolean(eventId),
-  });
+  return {
+    events,
+    isLoading,
+    isError,
+    refetch,
+    createEvent: createMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+  };
 };

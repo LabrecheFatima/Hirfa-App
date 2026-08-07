@@ -1,7 +1,7 @@
 package com.advance.hirfa.domaine.dto;
 
-
 import com.advance.hirfa.domaine.entities.EventStatusEnum;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,14 +17,23 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateEventRequestDto {
-    @NotBlank(message= "Event name is required")
+
+    @NotBlank(message = "Event name is required")
     private String name;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm[:ss]")
     private LocalDateTime start;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm[:ss]")
     private LocalDateTime end;
 
-    @NotBlank(message= "Venue information is required")
+    @NotBlank(message = "Venue information is required")
     private String venue;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm[:ss]")
     private LocalDateTime salesStart;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm[:ss]")
     private LocalDateTime salesEnd;
 
     @NotNull(message = "Event status must be provided")

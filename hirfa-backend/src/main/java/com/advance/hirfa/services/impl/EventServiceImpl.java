@@ -33,9 +33,12 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public Event createEvent(UUID organizerId, CreateEventRequest event) {
         User organizer = userRepository.findById(organizerId)
-                .orElseThrow(() -> new UserNotFoundExceptions(
-                        String.format("User with ID '%s' not found", organizerId)
-                ));
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setId(organizerId);
+                    return userRepository.save(newUser);
+                });
+
         Event eventToCreate = new Event();
 
         List<TicketType> ticketTypesToCreate = event.getTicketTypes().stream().map(
