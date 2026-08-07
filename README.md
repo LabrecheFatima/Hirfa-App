@@ -35,12 +35,12 @@ The project demonstrates high-throughput RESTful API engineering, robust securit
 ### 1. Organiser Portal & Dynamic Event Builder
 *Organizers configure event parameters, set scheduling windows, and define custom ticket tiers.*
 
-![Create Event Interface](hirfa-frontend\public\demo.png)
+![Create Event Interface](hirfa-frontend/public/demo.png)
 
 ### 2. Local Payment Processing (Chargily Pay Integration)
 *Seamless checkout flow handling local payment methods (EDAHABIA / CIB) with webhook verification.*
 
-![Chargily Payment Gateway](hirfa-frontend\public\chargily-payment.jpg)
+![Chargily Payment Gateway](hirfa-frontend/public/chargily-payment.jpg)
 
 ---
 
