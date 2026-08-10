@@ -89,8 +89,4 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 }
