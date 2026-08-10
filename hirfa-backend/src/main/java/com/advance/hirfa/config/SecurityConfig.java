@@ -32,17 +32,19 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 .authorizeHttpRequests(authorize -> authorize
-                        // public endpoints
+                        // Public endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/published-events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/chargily/webhook").permitAll()
 
-                        // role endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/v1/events/*/ticket-types/*/tickets").hasAuthority("ATTENDEE_ROLE")
+                        // Role endpoints - allow both ATTENDEE_ROLE and ORGANISER_ROLE to purchase and view tickets
+                        .requestMatchers(HttpMethod.POST, "/api/v1/events/*/ticket-types/*/tickets").hasAnyAuthority("ATTENDEE_ROLE", "ORGANISER_ROLE")
+                        .requestMatchers("/api/v1/tickets/**", "/api/v1/my-tickets/**", "/api/v1/claims/**").hasAnyAuthority("ATTENDEE_ROLE", "ORGANISER_ROLE")
+
+                        // Organizer management endpoints
                         .requestMatchers("/api/v1/events/**").hasAuthority("ORGANISER_ROLE")
                         .requestMatchers("/api/v1/ticket-validations/**").hasAnyAuthority("STAFF_ROLE", "ORGANISER_ROLE")
-                        .requestMatchers("/api/v1/tickets/**", "/api/v1/my-tickets/**", "/api/v1/claims/**").hasAuthority("ATTENDEE_ROLE")
 
-                        // catch all rule
+                        // Catch all rule
                         .anyRequest().authenticated()
                 )
 

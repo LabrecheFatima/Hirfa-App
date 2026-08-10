@@ -4,9 +4,8 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
-import { EventStatusEnum, type CreateEventRequestDto } from '../../types';
+import { EventStatusEnum, type CreateEventRequestDto, type ListEventResponseDto } from '../../types';
 
-// Generates local datetime-local string (YYYY-MM-DDTHH:mm) with pre-filled default times
 const getDefaultDateTime = (daysOffset: number, hour: number = 9): string => {
   const date = new Date();
   date.setDate(date.getDate() + daysOffset);
@@ -24,23 +23,17 @@ const getDefaultDateTime = (daysOffset: number, hour: number = 9): string => {
 
 const formatLocalDateTime = (dateStr?: string): string | undefined => {
   if (!dateStr) return undefined;
-  
-  // If string comes as YYYY-MM-DDTHH:mm, append seconds
-  if (dateStr.length === 16) {
-    return `${dateStr}:00`;
-  }
-  
-  // Strip timezone offset (Z or +00:00) and milliseconds
+  if (dateStr.length === 16) return `${dateStr}:00`;
   return dateStr.split('.')[0].replace('Z', '');
 };
 
 const getInitialFormData = (): CreateEventRequestDto => ({
   name: '',
   venue: '',
-  start: getDefaultDateTime(1, 9),     // Tomorrow at 09:00 AM
-  end: getDefaultDateTime(1, 17),      // Tomorrow at 05:00 PM
-  salesStart: getDefaultDateTime(0, 8), // Today at 08:00 AM
-  salesEnd: getDefaultDateTime(1, 8),   // Tomorrow at 08:00 AM
+  start: getDefaultDateTime(1, 9),
+  end: getDefaultDateTime(1, 17),
+  salesStart: getDefaultDateTime(0, 8),
+  salesEnd: getDefaultDateTime(1, 8),
   status: EventStatusEnum.PUBLISHED,
   ticketTypes: [
     {
@@ -57,6 +50,10 @@ export const CourseManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateEventRequestDto>(getInitialFormData());
+
+  const eventList: ListEventResponseDto[] = Array.isArray(events)
+    ? events
+    : (events as any)?.content || [];
 
   const handleOpenModal = () => {
     setFormData(getInitialFormData());
@@ -80,8 +77,7 @@ export const CourseManagement: React.FC = () => {
       await createEvent(payload);
       setIsModalOpen(false);
     } catch (err: any) {
-      // Captures error message from GlobalExceptionHandler ErrorDto ({ "error": "..." })
-      const backendError = err?.response?.data?.error || 'Failed to create event. Please check server logs.';
+      const backendError = err?.response?.data?.error || 'Failed to create event.';
       setFormError(backendError);
     }
   };
@@ -102,7 +98,7 @@ export const CourseManagement: React.FC = () => {
         <div className="p-8 text-center text-red-600">Failed to load events. Please refresh.</div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {events.map((event) => (
+          {eventList.map((event) => (
             <Card key={event.id}>
               <div className="flex items-start justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
@@ -151,7 +147,6 @@ export const CourseManagement: React.FC = () => {
                 value={formData.start || ''}
                 onChange={(e) => setFormData({ ...formData, start: e.target.value })}
               />
-              <span className="text-[10px] text-gray-400">Date & Hours (HH:MM)</span>
             </div>
             <div>
               <Input
@@ -161,28 +156,6 @@ export const CourseManagement: React.FC = () => {
                 value={formData.end || ''}
                 onChange={(e) => setFormData({ ...formData, end: e.target.value })}
               />
-              <span className="text-[10px] text-gray-400">Date & Hours (HH:MM)</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Input
-                label="Sales Start"
-                type="datetime-local"
-                value={formData.salesStart || ''}
-                onChange={(e) => setFormData({ ...formData, salesStart: e.target.value })}
-              />
-              <span className="text-[10px] text-gray-400">Date & Hours (HH:MM)</span>
-            </div>
-            <div>
-              <Input
-                label="Sales End"
-                type="datetime-local"
-                value={formData.salesEnd || ''}
-                onChange={(e) => setFormData({ ...formData, salesEnd: e.target.value })}
-              />
-              <span className="text-[10px] text-gray-400">Date & Hours (HH:MM)</span>
             </div>
           </div>
 

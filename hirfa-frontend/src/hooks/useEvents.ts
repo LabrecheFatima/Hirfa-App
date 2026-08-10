@@ -6,8 +6,8 @@ export const useEvents = () => {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['events'],
-    queryFn: eventService.getEvents,
+    queryKey: ['published-events'],
+    queryFn: eventService.getPublishedEvents,
   });
 
   const createMutation = useMutation({

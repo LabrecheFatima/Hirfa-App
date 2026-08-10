@@ -21,7 +21,6 @@ public class UserProvisioningFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    // Inject UserRepository via constructor
     public UserProvisioningFilter(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -37,20 +36,35 @@ public class UserProvisioningFilter extends OncePerRequestFilter {
                 && authentication.isAuthenticated()
                 && authentication.getPrincipal() instanceof Jwt jwt) {
 
-            UUID keycloakId = UUID.fromString(jwt.getSubject());
+            try {
+                UUID keycloakId = UUID.fromString(jwt.getSubject());
 
-            if (!userRepository.existsById(keycloakId)) {
-                User user = User.builder()
-                        .id(keycloakId)
-                        .name(jwt.getClaimAsString("preferred_username"))
-                        .email(jwt.getClaimAsString("email"))
-                        .createAt(LocalDateTime.now())
-                        .build();
+                if (!userRepository.existsById(keycloakId)) {
+                    // Fallback extractions if preferred_username or email are missing from token claims
+                    String username = jwt.getClaimAsString("preferred_username");
+                    if (username == null || username.isBlank()) {
+                        username = jwt.getClaimAsString("sub");
+                    }
 
-                userRepository.save(user);
+                    String email = jwt.getClaimAsString("email");
+                    if (email == null || email.isBlank()) {
+                        email = username + "@placeholder.com";
+                    }
+
+                    User user = User.builder()
+                            .id(keycloakId)
+                            .name(username)
+                            .email(email)
+                            .createAt(LocalDateTime.now())
+                            .build();
+
+                    userRepository.save(user);
+                }
+            } catch (Exception e) {
+                // Prevents provisioning failures from crashing the request filter chain
+                logger.error("Failed to auto-provision user from Keycloak JWT token", e);
             }
         }
-
 
         filterChain.doFilter(request, response);
     }

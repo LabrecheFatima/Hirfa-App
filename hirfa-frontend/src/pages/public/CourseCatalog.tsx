@@ -15,10 +15,13 @@ export const CourseCatalog: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<ListPublishedEventResponseDto | null>(null);
-  const [selectedTier] = useState<GetPublishedEventTicketTypeResponseDto | null>(null);
+  const [selectedTier, setSelectedTier] = useState<GetPublishedEventTicketTypeResponseDto | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  // Fallback to empty array to guarantee filter never fails
-  const safeEvents = Array.isArray(events) ? events : [];
+  // Safely unwrap array from Spring Data PageImpl wrapper if needed
+  const safeEvents: ListPublishedEventResponseDto[] = Array.isArray(events)
+    ? events
+    : (events as any)?.content || [];
 
   const filteredEvents = safeEvents.filter(
     (e) =>
@@ -26,13 +29,45 @@ export const CourseCatalog: React.FC = () => {
       e.venue?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Helper getters for property fallback compatibility (eventStart/start, eventEnd/end)
+  const getStartDate = (event: any) => event?.eventStart || event?.start;
+  const getEndDate = (event: any) => event?.eventEnd || event?.end;
+
+  const handleOpenModal = (event: ListPublishedEventResponseDto) => {
+    setSelectedEvent(event);
+    setCheckoutError(null);
+
+    // Read ticket types directly attached to the published event
+    const tiers: GetPublishedEventTicketTypeResponseDto[] = (event as any).ticketTypes || [];
+    if (tiers.length > 0) {
+      setSelectedTier(tiers[0]);
+    } else {
+      setSelectedTier(null);
+    }
+  };
+
   const handleCheckout = async () => {
     if (!authenticated) {
       login();
       return;
     }
-    if (selectedTier) {
-      await purchaseTicket(selectedTier.id);
+
+    if (!selectedEvent || !selectedTier) return;
+
+    try {
+      setCheckoutError(null);
+      // Pass both eventId and ticketTypeId to match POST /api/v1/events/{eventId}/ticket-types/{ticketTypeId}/tickets
+      const res = await purchaseTicket({
+        eventId: selectedEvent.id,
+        ticketTypeId: selectedTier.id,
+      });
+
+      if (res?.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Failed to initiate payment checkout.';
+      setCheckoutError(msg);
     }
   };
 
@@ -56,35 +91,90 @@ export const CourseCatalog: React.FC = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredEvents.map((event) => (
-          <Card key={event.id} className="flex flex-col justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
-              <p className="mt-2 text-xs text-gray-500">📍 {event.venue}</p>
-              <p className="mt-1 text-xs text-gray-500">
-                📅 {event.start ? new Date(event.start).toLocaleDateString() : 'TBA'} -{' '}
-                {event.end ? new Date(event.end).toLocaleDateString() : 'TBA'}
-              </p>
-            </div>
-            <div className="mt-6 border-t pt-4">
-              <Button className="w-full" onClick={() => setSelectedEvent(event)}>
-                View Pass Options
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {filteredEvents.map((event) => {
+          const startDate = getStartDate(event);
+          const endDate = getEndDate(event);
+
+          return (
+            <Card key={event.id} className="flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
+                <p className="mt-2 text-xs text-gray-500">📍 {event.venue}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  📅 {startDate ? new Date(startDate).toLocaleDateString() : 'TBA'} -{' '}
+                  {endDate ? new Date(endDate).toLocaleDateString() : 'TBA'}
+                </p>
+              </div>
+              <div className="mt-6 border-t pt-4">
+                <Button className="w-full" onClick={() => handleOpenModal(event)}>
+                  View Pass Options
+                </Button>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
       <Modal isOpen={Boolean(selectedEvent)} onClose={() => setSelectedEvent(null)} title={selectedEvent?.name}>
         {selectedEvent && (
           <div className="space-y-4">
+            {checkoutError && (
+              <div className="rounded bg-red-50 p-2 text-xs text-red-700 border border-red-200">
+                {checkoutError}
+              </div>
+            )}
+
             <div className="rounded-lg bg-gray-50 p-3 text-xs space-y-1 text-gray-700">
               <p><strong>Venue:</strong> {selectedEvent.venue}</p>
-              <p><strong>Start:</strong> {selectedEvent.start ? new Date(selectedEvent.start).toLocaleString() : 'TBA'}</p>
-              <p><strong>End:</strong> {selectedEvent.end ? new Date(selectedEvent.end).toLocaleString() : 'TBA'}</p>
+              <p>
+                <strong>Start:</strong>{' '}
+                {getStartDate(selectedEvent)
+                  ? new Date(getStartDate(selectedEvent)).toLocaleString()
+                  : 'TBA'}
+              </p>
+              <p>
+                <strong>End:</strong>{' '}
+                {getEndDate(selectedEvent)
+                  ? new Date(getEndDate(selectedEvent)).toLocaleString()
+                  : 'TBA'}
+              </p>
             </div>
 
-            <Button className="w-full" isLoading={isPurchasing} onClick={handleCheckout}>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-700">Select Pass Tier</label>
+              {((selectedEvent as any).ticketTypes || []).length > 0 ? (
+                <div className="space-y-2">
+                  {((selectedEvent as any).ticketTypes as GetPublishedEventTicketTypeResponseDto[]).map((tier) => (
+                    <div
+                      key={tier.id}
+                      onClick={() => setSelectedTier(tier)}
+                      className={`cursor-pointer rounded-lg border p-3 flex justify-between items-center text-xs transition-colors ${
+                        selectedTier?.id === tier.id
+                          ? 'border-indigo-600 bg-indigo-50/50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">{tier.name}</p>
+                        <p className="text-gray-500">
+                          {(tier as any).totalAvailable ?? (tier as any).capacity ?? 'Standard'} spots
+                        </p>
+                      </div>
+                      <p className="font-bold text-indigo-600">{tier.price} DZD</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500">Standard Pass Available</p>
+              )}
+            </div>
+
+            <Button
+              className="w-full"
+              isLoading={isPurchasing}
+              disabled={!selectedTier}
+              onClick={handleCheckout}
+            >
               {authenticated ? 'Proceed to Chargily Checkout' : 'Login to Purchase'}
             </Button>
           </div>

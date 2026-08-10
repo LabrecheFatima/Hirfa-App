@@ -25,6 +25,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         onLoad: 'check-sso',
         pkceMethod: 'S256',
         checkLoginIframe: false,
+        scope: 'openid profile email', // ADDED THIS LINE TO INCLUDE EMAIL & PROFILE CLAIMS IN JWT
       })
       .then((auth) => {
         setAuthenticated(auth);
@@ -36,9 +37,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser({
             id: parsedToken?.sub || '',
             email: parsedToken?.email,
-            firstName: parsedToken?.given_name,
-            lastName: parsedToken?.family_name,
-          });
+            name: parsedToken?.name || parsedToken?.preferred_username || `${parsedToken?.given_name || ''} ${parsedToken?.family_name || ''}`.trim(),
+          } as User);
         }
       })
       .catch((err) => {
