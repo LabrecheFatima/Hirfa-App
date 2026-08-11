@@ -31,11 +31,8 @@ export const Sidebar: React.FC = () => {
             <div className="mt-6 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Instructor Portal
             </div>
-            <NavLink to="/instructor/events" className={navItemClass}>
-              Manage Events
-            </NavLink>
-            <NavLink to="/instructor/events/new" className={navItemClass}>
-              Create Event
+            <NavLink to="/organiser/events" className={navItemClass}>
+              Organiser Dashboard
             </NavLink>
           </>
         )}

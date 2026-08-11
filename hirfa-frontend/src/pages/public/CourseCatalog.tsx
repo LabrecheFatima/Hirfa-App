@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useEvents } from '../../hooks/useEvents';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
+import { eventService } from '../../services/eventService';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -14,11 +15,11 @@ export const CourseCatalog: React.FC = () => {
   const { authenticated, login } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState<ListPublishedEventResponseDto | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [selectedTier, setSelectedTier] = useState<GetPublishedEventTicketTypeResponseDto | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Safely unwrap array from Spring Data PageImpl wrapper if needed
   const safeEvents: ListPublishedEventResponseDto[] = Array.isArray(events)
     ? events
     : (events as any)?.content || [];
@@ -29,20 +30,28 @@ export const CourseCatalog: React.FC = () => {
       e.venue?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Helper getters for property fallback compatibility (eventStart/start, eventEnd/end)
   const getStartDate = (event: any) => event?.eventStart || event?.start;
   const getEndDate = (event: any) => event?.eventEnd || event?.end;
 
-  const handleOpenModal = (event: ListPublishedEventResponseDto) => {
+  // FETCH DETAILED TICKET TYPES WHEN OPENING MODAL
+  const handleOpenModal = async (event: ListPublishedEventResponseDto) => {
     setSelectedEvent(event);
     setCheckoutError(null);
+    setSelectedTier(null);
+    setLoadingDetails(true);
 
-    // Read ticket types directly attached to the published event
-    const tiers: GetPublishedEventTicketTypeResponseDto[] = (event as any).ticketTypes || [];
-    if (tiers.length > 0) {
-      setSelectedTier(tiers[0]);
-    } else {
-      setSelectedTier(null);
+    try {
+      const details = await eventService.getPublishedEventDetails(event.id);
+      setSelectedEvent(details);
+
+      const tiers: GetPublishedEventTicketTypeResponseDto[] = details.ticketType || [];
+      if (tiers.length > 0) {
+        setSelectedTier(tiers[0]);
+      }
+    } catch (err) {
+      console.error('Failed to load event ticket details', err);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -56,7 +65,6 @@ export const CourseCatalog: React.FC = () => {
 
     try {
       setCheckoutError(null);
-      // Pass both eventId and ticketTypeId to match POST /api/v1/events/{eventId}/ticket-types/{ticketTypeId}/tickets
       const res = await purchaseTicket({
         eventId: selectedEvent.id,
         ticketTypeId: selectedTier.id,
@@ -142,9 +150,11 @@ export const CourseCatalog: React.FC = () => {
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-gray-700">Select Pass Tier</label>
-              {((selectedEvent as any).ticketTypes || []).length > 0 ? (
+              {loadingDetails ? (
+                <p className="text-xs text-gray-500">Loading ticket options...</p>
+              ) : (selectedEvent.ticketTypes || []).length > 0 ? (
                 <div className="space-y-2">
-                  {((selectedEvent as any).ticketTypes as GetPublishedEventTicketTypeResponseDto[]).map((tier) => (
+                  {(selectedEvent.ticketTypes as GetPublishedEventTicketTypeResponseDto[]).map((tier) => (
                     <div
                       key={tier.id}
                       onClick={() => setSelectedTier(tier)}
@@ -165,14 +175,14 @@ export const CourseCatalog: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500">Standard Pass Available</p>
+                <p className="text-xs text-gray-500">No ticket tiers available for this event.</p>
               )}
             </div>
 
             <Button
               className="w-full"
               isLoading={isPurchasing}
-              disabled={!selectedTier}
+              disabled={!selectedTier || loadingDetails}
               onClick={handleCheckout}
             >
               {authenticated ? 'Proceed to Chargily Checkout' : 'Login to Purchase'}

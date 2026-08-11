@@ -1,13 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '../services/eventService';
-import type { ListEventResponseDto, CreateEventRequestDto } from '../types';
+import type { CreateEventRequestDto } from '../types';
 
 export const useEvents = () => {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  // Public published events query
+  const publishedQuery = useQuery({
     queryKey: ['published-events'],
     queryFn: eventService.getPublishedEvents,
+  });
+
+  // Organizer managed events query
+  const managedQuery = useQuery({
+    queryKey: ['events'],
+    queryFn: eventService.getEvents,
   });
 
   const createMutation = useMutation({
@@ -18,18 +25,49 @@ export const useEvents = () => {
     },
   });
 
-  const events: ListEventResponseDto[] = Array.isArray(data)
-    ? data
-    : Array.isArray((data as any)?.content)
-    ? (data as any).content
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      eventService.updateEvent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['published-events'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => eventService.deleteEvent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['published-events'] });
+    },
+  });
+
+  const events = Array.isArray(publishedQuery.data)
+    ? publishedQuery.data
+    : Array.isArray((publishedQuery.data as any)?.content)
+    ? (publishedQuery.data as any).content
+    : [];
+
+  const managedEvents = Array.isArray(managedQuery.data)
+    ? managedQuery.data
+    : Array.isArray((managedQuery.data as any)?.content)
+    ? (managedQuery.data as any).content
     : [];
 
   return {
     events,
-    isLoading,
-    isError,
-    refetch,
+    managedEvents,
+    isLoading: publishedQuery.isLoading || managedQuery.isLoading,
+    isError: publishedQuery.isError || managedQuery.isError,
+    refetch: () => {
+      publishedQuery.refetch();
+      managedQuery.refetch();
+    },
     createEvent: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
+    updateEvent: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+    deleteEvent: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };
