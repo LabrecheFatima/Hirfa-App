@@ -45,21 +45,26 @@ public class TicketTypeServiceImpl implements TicketTypeService {
                         String.format("Ticket type with ID %s was not found", ticketTypeId)
                 ));
 
-        int purchasedTickets = ticketRepository.countByTicketTypeId(ticketType.getId());
         Integer totalAvailable = ticketType.getTotalAvailable();
 
-        if (purchasedTickets + 1 > totalAvailable) {
+        if (totalAvailable <= 0) {
             throw new TicketSoldOutExceptions("No more tickets available for this tier!");
         }
+
+        ticketType.setTotalAvailable(totalAvailable - 1);
+
+        ticketTypeRepository.save(ticketType);
 
         Ticket ticket = Ticket.builder()
                 .purchase(user)
                 .ticketType(ticketType)
-                .status(TicketStatusEnum.PENDING_PAYMENT)
+                .status(TicketStatusEnum.PURCHASED)
                 .createAt(LocalDateTime.now())
                 .build();
 
-        Ticket savedTicket= ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        qrCodeService.generateQrCode(savedTicket);
 
         ChargilyCheckoutResponseDto checkout = chargilyPayService.createCheckoutSession(
                 savedTicket.getId(),
@@ -73,7 +78,7 @@ public class TicketTypeServiceImpl implements TicketTypeService {
         return PurchaseTicketResponseDto.builder()
                 .ticketId(savedTicket.getId())
                 .checkoutUrl(checkout.getCheckoutUrl())
-                .build();
-    }
+                .build();}
+
 
 }

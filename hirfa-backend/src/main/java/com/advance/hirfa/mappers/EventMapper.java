@@ -38,6 +38,7 @@ public interface EventMapper {
 
     ListPublishedEventResponseDto toListPublishedEventResponseDto(Event event);
 
+    @Mapping(source = "ticketTypes", target = "ticketType")
     GetPublishedEventDetailsResponseDto toGetPublishedEventDetailsResponseDto(Event event);
 
     GetPublishedEventTicketTypeResponseDto toGetPublishedEventTicketTypeResponseDto(TicketType ticketType);

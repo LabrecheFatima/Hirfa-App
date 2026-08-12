@@ -33,7 +33,6 @@ export const CourseCatalog: React.FC = () => {
   const getStartDate = (event: any) => event?.eventStart || event?.start;
   const getEndDate = (event: any) => event?.eventEnd || event?.end;
 
-  // FETCH DETAILED TICKET TYPES WHEN OPENING MODAL
   const handleOpenModal = async (event: ListPublishedEventResponseDto) => {
     setSelectedEvent(event);
     setCheckoutError(null);
@@ -81,6 +80,9 @@ export const CourseCatalog: React.FC = () => {
 
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading catalog...</div>;
   if (isError) return <div className="p-8 text-center text-red-600">Failed to load published events.</div>;
+
+  const currentTiers: GetPublishedEventTicketTypeResponseDto[] =
+    selectedEvent?.ticketType || selectedEvent?.ticketTypes || [];
 
   return (
     <div className="space-y-6">
@@ -152,9 +154,9 @@ export const CourseCatalog: React.FC = () => {
               <label className="text-xs font-semibold text-gray-700">Select Pass Tier</label>
               {loadingDetails ? (
                 <p className="text-xs text-gray-500">Loading ticket options...</p>
-              ) : (selectedEvent.ticketTypes || []).length > 0 ? (
+              ) : currentTiers.length > 0 ? (
                 <div className="space-y-2">
-                  {(selectedEvent.ticketTypes as GetPublishedEventTicketTypeResponseDto[]).map((tier) => (
+                  {currentTiers.map((tier) => (
                     <div
                       key={tier.id}
                       onClick={() => setSelectedTier(tier)}
@@ -167,7 +169,7 @@ export const CourseCatalog: React.FC = () => {
                       <div>
                         <p className="font-semibold text-gray-900">{tier.name}</p>
                         <p className="text-gray-500">
-                          {(tier as any).totalAvailable ?? (tier as any).capacity ?? 'Standard'} spots
+                          {tier.description || 'General admission pass'}
                         </p>
                       </div>
                       <p className="font-bold text-indigo-600">{tier.price} DZD</p>
