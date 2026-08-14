@@ -22,9 +22,13 @@ export const Sidebar: React.FC = () => {
         <NavLink to="/events" className={navItemClass}>
           Browse Events
         </NavLink>
-        <NavLink to="/my-tickets" className={navItemClass}>
-          My Tickets
-        </NavLink>
+
+        {/* Hide ticket wallet link for Staff members */}
+        {!roles.includes(Role.STAFF) && (
+          <NavLink to="/my-tickets" className={navItemClass}>
+            My Tickets
+          </NavLink>
+        )}
 
         {roles.includes(Role.ORGANISER) && (
           <>

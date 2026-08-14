@@ -7,6 +7,7 @@ export interface AuthContextType {
   user: User | null;
   roles: string[];
   login: () => void;
+  register: () => void;
   logout: () => void;
   hasRole: (role: Role) => boolean;
   token: string | undefined;

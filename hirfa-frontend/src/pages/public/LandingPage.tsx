@@ -1,11 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom'; 
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { Role } from '../../types';
 
 export const LandingPage: React.FC = () => {
   const { authenticated, roles } = useAuth();
+
+  // Redirect staff members directly to the scanner page
+  if (authenticated && roles.includes(Role.STAFF)) {
+    return <Navigate to="/staff/scanner" replace />;
+  }
+
   const isOrganiser = authenticated && roles.includes(Role.ORGANISER);
 
   return (

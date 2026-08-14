@@ -4,8 +4,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 export const Navbar: React.FC = () => {
-  const { authenticated, user, login, logout, roles } = useAuth();
+  const { authenticated, user, login, register, logout, roles } = useAuth();
 
+  const isStaff = roles.map(r => r.toUpperCase()).includes('STAFF');
   const displayRole =
     roles.find((r) => ['ATTENDEE', 'ORGANIZER', 'STAFF'].includes(r.toUpperCase())) || 'User';
 
@@ -20,7 +21,8 @@ export const Navbar: React.FC = () => {
             <Link to="/events" className="hover:text-indigo-600 transition-colors">
               Explore Events
             </Link>
-            {authenticated && (
+            {/* Show My Tickets only to Non-Staff users */}
+            {authenticated && !isStaff && (
               <Link to="/my-tickets" className="hover:text-indigo-600 transition-colors">
                 My Tickets
               </Link>
@@ -42,9 +44,14 @@ export const Navbar: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <Button variant="primary" onClick={login}>
-              Sign In
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={login}>
+                Sign In
+              </Button>
+              <Button variant="primary" onClick={register}>
+                Register
+              </Button>
+            </div>
           )}
         </div>
       </div>

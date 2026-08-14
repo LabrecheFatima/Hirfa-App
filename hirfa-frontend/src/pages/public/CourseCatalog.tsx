@@ -13,7 +13,8 @@ import type { ListPublishedEventResponseDto, GetPublishedEventTicketTypeResponse
 export const CourseCatalog: React.FC = () => {
   const { events, isLoading, isError } = useEvents();
   const { purchaseTicket, isPurchasing } = useTickets();
-  const { authenticated, login } = useAuth();
+  const { authenticated, login, roles } = useAuth();
+  const isStaff = roles.map((r) => r.toUpperCase()).includes('STAFF');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
@@ -202,10 +203,14 @@ export const CourseCatalog: React.FC = () => {
             <Button
               className="w-full"
               isLoading={isPurchasing}
-              disabled={!selectedTier || loadingDetails}
+              disabled={!selectedTier || loadingDetails || isStaff}
               onClick={handleCheckout}
             >
-              {authenticated ? 'Proceed to Chargily Checkout' : 'Login to Purchase'}
+              {isStaff
+                ? 'Staff Accounts Cannot Purchase Passes'
+                : authenticated
+                ? 'Proceed to Chargily Checkout'
+                : 'Login to Purchase'}
             </Button>
           </div>
         )}

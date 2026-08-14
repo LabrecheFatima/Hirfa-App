@@ -53,6 +53,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     keycloak.login();
   };
 
+  const register = () => {
+    keycloak.register();
+  };
+
   const logout = () => {
     keycloak.logout({ redirectUri: window.location.origin });
   };
@@ -69,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user,
         roles,
         login,
+        register,
         logout,
         hasRole,
         token: keycloak.token,

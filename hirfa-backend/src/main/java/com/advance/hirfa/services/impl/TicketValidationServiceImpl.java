@@ -28,7 +28,7 @@ public class TicketValidationServiceImpl implements TicketValidationService {
                 .orElseThrow(() -> new QrCodeNotFoundExceptions(
                         String.format("QR Code with ID %s was not found", qrCodeId)
                 ));
-        
+
         if (qrCode.getTicket() == null) {
             throw new TicketNotFoundExceptions("No valid ticket associated with this QR Code.");
         }
