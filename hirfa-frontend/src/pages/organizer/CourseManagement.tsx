@@ -73,9 +73,24 @@ export const CourseManagement: React.FC = () => {
     setEditingEventId(event.id);
     setFormError(null);
 
-    const ticketType = event.ticketTypes && event.ticketTypes.length > 0
-      ? event.ticketTypes[0]
-      : { name: 'Standard Pass', price: 1000, description: 'General admission pass', totalAvailable: 50 };
+    // Map ALL ticket types associated with the event
+    const mappedTicketTypes =
+      event.ticketTypes && event.ticketTypes.length > 0
+        ? event.ticketTypes.map((tt: any) => ({
+            id: tt.id,
+            name: tt.name,
+            price: tt.price,
+            description: tt.description || '',
+            totalAvailable: tt.totalAvailable,
+          }))
+        : [
+            {
+              name: 'Standard Pass',
+              price: 1000,
+              description: 'General admission pass',
+              totalAvailable: 50,
+            },
+          ];
 
     setFormData({
       id: event.id,
@@ -86,18 +101,33 @@ export const CourseManagement: React.FC = () => {
       salesStart: event.salesStart ? event.salesStart.slice(0, 16) : getDefaultDateTime(0, 8),
       salesEnd: event.salesEnd ? event.salesEnd.slice(0, 16) : getDefaultDateTime(1, 8),
       status: event.status || EventStatusEnum.DRAFT,
-      ticketTypes: [
-        {
-          id: (ticketType as any).id,
-          name: ticketType.name,
-          price: ticketType.price,
-          description: ticketType.description || 'General admission pass',
-          totalAvailable: ticketType.totalAvailable,
-        },
-      ],
+      ticketTypes: mappedTicketTypes,
     });
 
     setIsModalOpen(true);
+  };
+
+  // Helper functions to manage multiple ticket tiers
+  const handleAddTicketType = () => {
+    setFormData({
+      ...formData,
+      ticketTypes: [
+        ...formData.ticketTypes,
+        { name: '', price: 0, description: '', totalAvailable: 50 },
+      ],
+    });
+  };
+
+  const handleRemoveTicketType = (index: number) => {
+    if (formData.ticketTypes.length === 1) return; // Keep at least one tier
+    const updated = formData.ticketTypes.filter((_: any, i: number) => i !== index);
+    setFormData({ ...formData, ticketTypes: updated });
+  };
+
+  const handleTicketTypeChange = (index: number, field: string, value: any) => {
+    const updated = [...formData.ticketTypes];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData({ ...formData, ticketTypes: updated });
   };
 
   const handleDelete = async (eventId: string) => {
@@ -155,13 +185,15 @@ export const CourseManagement: React.FC = () => {
             <Card key={event.id}>
               <div className="flex items-start justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
-                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                  event.status === EventStatusEnum.PUBLISHED
-                    ? 'bg-green-100 text-green-700'
-                    : event.status === EventStatusEnum.CANCELLED
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-indigo-50 text-indigo-600'
-                }`}>
+                <span
+                  className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                    event.status === EventStatusEnum.PUBLISHED
+                      ? 'bg-green-100 text-green-700'
+                      : event.status === EventStatusEnum.CANCELLED
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-indigo-50 text-indigo-600'
+                  }`}
+                >
                   {event.status || EventStatusEnum.DRAFT}
                 </span>
               </div>
@@ -169,6 +201,7 @@ export const CourseManagement: React.FC = () => {
                 <p>📍 Venue: {event.venue}</p>
                 <p>📅 Start: {event.start ? new Date(event.start).toLocaleString() : 'TBA'}</p>
                 <p>🏁 End: {event.end ? new Date(event.end).toLocaleString() : 'TBA'}</p>
+                <p>🎟️ Tiers: {event.ticketTypes ? event.ticketTypes.length : 0} configured</p>
               </div>
 
               {/* Action Buttons */}
@@ -196,7 +229,7 @@ export const CourseManagement: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         title={editingEventId ? 'Edit Event' : 'Create New Event'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           {formError && (
             <div className="rounded-md bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
               {formError}
@@ -251,39 +284,71 @@ export const CourseManagement: React.FC = () => {
             />
           </div>
 
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-3">
-            <h4 className="text-xs font-semibold text-gray-700">Standard Ticket Tier</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Pass Name"
-                value={formData.ticketTypes[0]?.name || ''}
-                onChange={(e) => {
-                  const updatedTickets = [...formData.ticketTypes];
-                  updatedTickets[0].name = e.target.value;
-                  setFormData({ ...formData, ticketTypes: updatedTickets });
-                }}
-              />
-              <Input
-                label="Price (DZD)"
-                type="number"
-                value={formData.ticketTypes[0]?.price || 0}
-                onChange={(e) => {
-                  const updatedTickets = [...formData.ticketTypes];
-                  updatedTickets[0].price = Number(e.target.value);
-                  setFormData({ ...formData, ticketTypes: updatedTickets });
-                }}
-              />
+          {/* Dynamic Ticket Tiers Section */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                Ticket Tiers & Pricing
+              </h4>
+              <button
+                type="button"
+                onClick={handleAddTicketType}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                + Add Ticket Tier
+              </button>
             </div>
-            <Input
-              label="Total Available Quantity"
-              type="number"
-              value={formData.ticketTypes[0]?.totalAvailable || 0}
-              onChange={(e) => {
-                const updatedTickets = [...formData.ticketTypes];
-                updatedTickets[0].totalAvailable = Number(e.target.value);
-                setFormData({ ...formData, ticketTypes: updatedTickets });
-              }}
-            />
+
+            {formData.ticketTypes.map((tier: any, index: number) => (
+              <div
+                key={index}
+                className="rounded-lg border border-gray-200 bg-white p-3 space-y-3 shadow-sm relative"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-gray-500">
+                    Tier #{index + 1}
+                  </span>
+                  {formData.ticketTypes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTicketType(index)}
+                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Pass Name"
+                    placeholder="e.g. VIP, Student, Standard"
+                    required
+                    value={tier.name || ''}
+                    onChange={(e) => handleTicketTypeChange(index, 'name', e.target.value)}
+                  />
+                  <Input
+                    label="Price (DZD)"
+                    type="number"
+                    required
+                    value={tier.price || 0}
+                    onChange={(e) =>
+                      handleTicketTypeChange(index, 'price', Number(e.target.value))
+                    }
+                  />
+                </div>
+
+                <Input
+                  label="Total Available Quantity"
+                  type="number"
+                  required
+                  value={tier.totalAvailable || 0}
+                  onChange={(e) =>
+                    handleTicketTypeChange(index, 'totalAvailable', Number(e.target.value))
+                  }
+                />
+              </div>
+            ))}
           </div>
 
           <Button type="submit" className="w-full" isLoading={isCreating || isUpdating}>

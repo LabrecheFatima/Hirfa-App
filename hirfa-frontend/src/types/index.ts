@@ -31,7 +31,6 @@ export type QrCodeStatusEnum = (typeof QrCodeStatusEnum)[keyof typeof QrCodeStat
 export const TicketValidationEnum = {
   VALID: 'VALID',
   INVALID: 'INVALID',
-  EXPIRED: 'EXPIRED',
 } as const;
 export type TicketValidationEnum = (typeof TicketValidationEnum)[keyof typeof TicketValidationEnum];
 
@@ -275,8 +274,10 @@ export interface TicketValidationRequestDto {
 }
 
 export interface TicketValidationResponseDto {
-  ticketId: string;
+  id?: string;
+  ticketId?: string;
   status: TicketValidationEnum;
+  validationMethod?: TicketValidationMethod;
 }
 
 // --- Chargily Payment DTOs ---
@@ -292,6 +293,10 @@ export interface ChargilyCheckoutResponseDto {
   id: string;
   status: string;
   checkoutUrl?: string;
+}
+
+export interface UpdateEventRequestDto extends CreateEventRequestDto {
+  id: string;
 }
 
 // --- Common / Error DTO ---

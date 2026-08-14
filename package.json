@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3"
+  },
+  "dependencies": {
+    "html5-qrcode": "^2.3.8"
   }
 }

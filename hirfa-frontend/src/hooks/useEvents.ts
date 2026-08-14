@@ -1,73 +1,37 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { eventService } from '../services/eventService';
-import type { CreateEventRequestDto } from '../types';
+import type { ListPublishedEventResponseDto } from '../types';
 
 export const useEvents = () => {
-  const queryClient = useQueryClient();
+  const [events, setEvents] = useState<ListPublishedEventResponseDto[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
 
-  // Public published events query
-  const publishedQuery = useQuery({
-    queryKey: ['published-events'],
-    queryFn: eventService.getPublishedEvents,
-  });
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setIsLoading(true);
+        setIsError(false);
 
-  // Organizer managed events query
-  const managedQuery = useQuery({
-    queryKey: ['events'],
-    queryFn: eventService.getEvents,
-  });
+        // Call the public published events service
+        const data = await eventService.getPublishedEvents();
 
-  const createMutation = useMutation({
-    mutationFn: (newEvent: CreateEventRequestDto) => eventService.createEvent(newEvent),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['published-events'] });
-    },
-  });
+        // This safely extracts the array whether it's wrapped in 'content' or a direct array
+        const eventList = Array.isArray(data)
+          ? data
+          : (data as any)?.content || [];
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      eventService.updateEvent(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['published-events'] });
-    },
-  });
+        setEvents(eventList);
+      } catch (err) {
+        console.error('Failed to fetch published events in useEvents hook:', err);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => eventService.deleteEvent(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['published-events'] });
-    },
-  });
+    fetchEvents();
+  }, []);
 
-  const events = Array.isArray(publishedQuery.data)
-    ? publishedQuery.data
-    : Array.isArray((publishedQuery.data as any)?.content)
-    ? (publishedQuery.data as any).content
-    : [];
-
-  const managedEvents = Array.isArray(managedQuery.data)
-    ? managedQuery.data
-    : Array.isArray((managedQuery.data as any)?.content)
-    ? (managedQuery.data as any).content
-    : [];
-
-  return {
-    events,
-    managedEvents,
-    isLoading: publishedQuery.isLoading || managedQuery.isLoading,
-    isError: publishedQuery.isError || managedQuery.isError,
-    refetch: () => {
-      publishedQuery.refetch();
-      managedQuery.refetch();
-    },
-    createEvent: createMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    updateEvent: updateMutation.mutateAsync,
-    isUpdating: updateMutation.isPending,
-    deleteEvent: deleteMutation.mutateAsync,
-    isDeleting: deleteMutation.isPending,
-  };
+  return { events, isLoading, isError };
 };

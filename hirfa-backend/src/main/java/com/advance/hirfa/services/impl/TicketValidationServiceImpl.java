@@ -24,38 +24,34 @@ public class TicketValidationServiceImpl implements TicketValidationService {
 
     @Override
     public TicketValidation validateTicketByQroCode(UUID qrCodeId) {
-
-        QrCode qrCode = qrCodeRepository.findByIdAndStatus(qrCodeId, QrCodeStatusEnum.ACTIVE)
+        QrCode qrCode = qrCodeRepository.findById(qrCodeId)
                 .orElseThrow(() -> new QrCodeNotFoundExceptions(
                         String.format("QR Code with ID %s was not found", qrCodeId)
                 ));
+        
+        if (qrCode.getTicket() == null) {
+            throw new TicketNotFoundExceptions("No valid ticket associated with this QR Code.");
+        }
 
         return validateTicket(qrCode.getTicket(), TicketValidationMethod.QR_SCAN);
     }
 
+    @Override
+    public TicketValidation validateTicketManually(UUID ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(TicketNotFoundExceptions::new);
 
-@Override
-public TicketValidation validateTicketManually(UUID ticketId) {
-    Ticket ticket = ticketRepository.findById(ticketId)
-            .orElseThrow(TicketNotFoundExceptions::new);
+        return validateTicket(ticket, TicketValidationMethod.MANUAL);
+    }
 
-    return validateTicket(ticket, TicketValidationMethod.MANUAL);
+    private TicketValidation validateTicket(Ticket ticket, TicketValidationMethod validationMethod) {
+        // Always set status to VALID and persist every scan event in PostgreSQL.
+        TicketValidation ticketValidation = TicketValidation.builder()
+                .ticket(ticket)
+                .validationMethod(validationMethod)
+                .status(TicketValidationEnum.VALID)
+                .build();
+
+        return ticketValidationRepository.save(ticketValidation);
+    }
 }
-
-private TicketValidation validateTicket(Ticket ticket, TicketValidationMethod validationMethod) {
-    TicketValidation ticketValidation = new TicketValidation();
-    ticketValidation.setTicket(ticket);
-    ticketValidation.setValidationMethod(validationMethod);
-
-    TicketValidationEnum ticketValidationStatus = ticket.getValidation()
-            .stream()
-            .filter(v -> TicketValidationEnum.VALID.equals(v.getStatus()))
-            .findFirst()
-            .map(v -> TicketValidationEnum.INVALID)
-            .orElse(TicketValidationEnum.VALID);
-
-    ticketValidation.setStatus(ticketValidationStatus);
-
-    return ticketValidationRepository.save(ticketValidation);
-
-}}

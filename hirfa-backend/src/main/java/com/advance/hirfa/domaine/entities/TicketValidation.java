@@ -3,6 +3,8 @@ package com.advance.hirfa.domaine.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 
@@ -36,13 +38,13 @@ public class TicketValidation {
     @JoinColumn(name= "ticket_id")
     private Ticket ticket;
 
-    @CreatedDate
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createAt;
 
-    @LastModifiedBy
-    @Column(name = "updated_at", updatable = false)
-    private LocalDate updateAt;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updateAt;
 
     @Override
     public boolean equals(Object o) {

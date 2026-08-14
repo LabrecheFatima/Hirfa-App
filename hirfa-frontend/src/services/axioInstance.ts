@@ -1,27 +1,19 @@
 import axios from 'axios';
-import keycloak from '../config/keycloak';
+import keycloak from '../config/keycloak'; // Adjust path if your keycloak config is elsewhere
 
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8085',
+export const axiosInstance = axios.create({
+  baseURL: 'http://localhost:8085/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 axiosInstance.interceptors.request.use(
-  async (config) => {
-    if (keycloak.authenticated) {
-      try {
-        // Refresh token if it expires in less than 30 seconds
-        await keycloak.updateToken(30);
-      } catch (error) {
-        console.error('Failed to refresh Keycloak token', error);
-        keycloak.login();
-      }
-      
-      if (keycloak.token) {
-        config.headers.Authorization = `Bearer ${keycloak.token}`;
-      }
+  (config) => {
+    // Check keycloak token first, then fallback to localStorage
+    const token = keycloak?.token || localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },

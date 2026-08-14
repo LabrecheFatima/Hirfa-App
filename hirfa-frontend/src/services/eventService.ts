@@ -1,42 +1,71 @@
-import axiosInstance from './axioInstance';
+import axios from 'axios';
 import type {
   ListPublishedEventResponseDto,
   GetPublishedEventDetailsResponseDto,
   ListEventResponseDto,
+  GetEventDetailsResponseDto,
   CreateEventRequestDto,
+  UpdateEventRequestDto,
 } from '../types';
 
+const API_BASE_URL = 'http://localhost:8085/api/v1';
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+// Interceptor: Delete Authorization header for public endpoints (/published-events)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  const isPublic = config.url?.includes('/published-events');
+
+  if (token && token !== 'null' && token !== 'undefined' && !isPublic) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    delete config.headers.Authorization;
+  }
+  return config;
+});
+
 export const eventService = {
-  getPublishedEvents: async (): Promise<ListPublishedEventResponseDto[]> => {
-    const response = await axiosInstance.get('/api/v1/published-events');
+  // PUBLIC ENDPOINTS
+  getPublishedEvents: async (q?: string) => {
+    const response = await api.get<ListPublishedEventResponseDto[]>('/published-events', {
+      params: q ? { q } : {},
+    });
     return response.data;
   },
 
-  // ADDED: Fetch detailed published event with ticketTypes
-  getPublishedEventDetails: async (
-    eventId: string
-  ): Promise<GetPublishedEventDetailsResponseDto> => {
-    const response = await axiosInstance.get(`/api/v1/published-events/${eventId}`);
+  getPublishedEventDetails: async (eventId: string) => {
+    const response = await api.get<GetPublishedEventDetailsResponseDto>(
+      `/published-events/${eventId}`
+    );
     return response.data;
   },
 
-  getEvents: async (): Promise<ListEventResponseDto[]> => {
-    const response = await axiosInstance.get('/api/v1/events');
+  // ORGANIZER ENDPOINTS
+  listOrganizerEvents: async () => {
+    const response = await api.get<ListEventResponseDto[]>('/events');
+    return response.data;
+  },
+
+  getOrganizerEventDetails: async (eventId: string) => {
+    const response = await api.get<GetEventDetailsResponseDto>(`/events/${eventId}`);
     return response.data;
   },
 
   createEvent: async (data: CreateEventRequestDto) => {
-    const response = await axiosInstance.post('/api/v1/events', data);
+    const response = await api.post('/events', data);
     return response.data;
   },
 
-  updateEvent: async (id: string, data: any) => {
-    const response = await axiosInstance.put(`/api/v1/events/${id}`, data);
+  updateEvent: async (eventId: string, data: UpdateEventRequestDto) => {
+    const response = await api.put(`/events/${eventId}`, data);
     return response.data;
   },
 
-  deleteEvent: async (id: string) => {
-    const response = await axiosInstance.delete(`/api/v1/events/${id}`);
+  deleteEvent: async (eventId: string) => {
+    const response = await api.delete(`/events/${eventId}`);
     return response.data;
   },
 };

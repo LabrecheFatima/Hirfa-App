@@ -26,15 +26,19 @@ public class PublishedEventController {
     @Transactional(readOnly = true)
     public ResponseEntity<Page<ListPublishedEventResponseDto>> listPublishedEvents(
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String query,
             Pageable pageable) {
+
+        String searchTerm = (q != null && !q.trim().isEmpty()) ? q : query;
+
         Page<Event> events;
-        if (null != q && !q.trim().isEmpty()) {
-            events = eventService.searchPublishedEvents(q, pageable);
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            events = eventService.searchPublishedEvents(searchTerm, pageable);
         } else {
             events = eventService.listPublishedEvent(pageable);
         }
-        return ResponseEntity.ok(
-                events.map(eventMapper::toListPublishedEventResponseDto));
+
+        return ResponseEntity.ok(events.map(eventMapper::toListPublishedEventResponseDto));
     }
 
     @GetMapping(path = "/{eventId}")

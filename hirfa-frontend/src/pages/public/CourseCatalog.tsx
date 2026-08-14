@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
@@ -31,7 +32,7 @@ export const CourseCatalog: React.FC = () => {
   );
 
   const getStartDate = (event: any) => event?.eventStart || event?.start;
-  const getEndDate = (event: any) => event?.eventEnd || event?.end;
+  const getEndDate = (event: any) => event?.end || event?.eventEnd;
 
   const handleOpenModal = async (event: ListPublishedEventResponseDto) => {
     setSelectedEvent(event);
@@ -86,6 +87,23 @@ export const CourseCatalog: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Top Navigation Bar */}
+      <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-indigo-600 transition-colors"
+        >
+          ← Main Page
+        </Link>
+
+        <Link
+          to="/my-tickets"
+          className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition-colors"
+        >
+         My Tickets
+        </Link>
+      </div>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Event & Workshop Catalog</h1>
