@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../hooks/useAuth';
 import type { ListTicketResponseDto } from '../../types';
@@ -15,7 +16,6 @@ export const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ ticket, onClose 
   const [isError, setIsError] = useState<boolean>(false);
 
   useEffect(() => {
-    // Early exit if modal is closed or ticket is missing
     if (!ticket) return;
 
     let isMounted = true;
@@ -60,7 +60,6 @@ export const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ ticket, onClose 
 
     fetchQrCode();
 
-    // Cleanup memory and reset state asynchronously when unmounting or changing ticket
     return () => {
       isMounted = false;
       if (createdObjectUrl) {
@@ -73,21 +72,29 @@ export const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ ticket, onClose 
   return (
     <Modal isOpen={Boolean(ticket)} onClose={onClose} title="Entry QR Pass">
       {ticket && (
-        <div className="flex flex-col items-center text-center p-4">
-          <p className="font-semibold text-gray-900">{ticket.ticketType?.name || 'Entry Pass'}</p>
-          <p className="text-xs text-gray-500 mb-4">Price: {ticket.ticketType?.price} DZD</p>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25 }}
+          className="flex flex-col items-center text-center p-2"
+        >
+          <p className="font-extrabold text-slate-900 text-base">{ticket.ticketType?.name || 'Entry Pass'}</p>
+          <p className="text-xs text-slate-500 mb-4">Price: {ticket.ticketType?.price} DZD</p>
 
-          <div className="border p-4 rounded-xl bg-white shadow-inner flex flex-col items-center justify-center min-h-[240px] min-w-[240px]">
+          <div className="border border-slate-200 p-4 rounded-2xl bg-white shadow-xs flex flex-col items-center justify-center min-h-[240px] min-w-[240px]">
             {isLoading && (
-              <p className="text-xs text-gray-400 animate-pulse">Generating entry QR code...</p>
+              <p className="text-xs text-slate-400 animate-pulse font-medium">Generating entry QR code...</p>
             )}
 
             {isError && (
-              <p className="text-xs text-red-500">Failed to render QR Code pass.</p>
+              <p className="text-xs text-rose-500 font-semibold">Failed to render QR Code pass.</p>
             )}
 
             {!isLoading && !isError && qrImageUrl && (
-              <img
+              <motion.img
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
                 src={qrImageUrl}
                 alt="Ticket QR Code"
                 className="h-56 w-56 object-contain"
@@ -95,8 +102,10 @@ export const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ ticket, onClose 
             )}
           </div>
 
-          <p className="mt-3 text-[10px] text-gray-400 font-mono">Ticket ID: {ticket.id}</p>
-        </div>
+          <p className="mt-4 text-[10px] text-slate-400 font-mono tracking-tight">
+            Ticket ID: {ticket.id}
+          </p>
+        </motion.div>
       )}
     </Modal>
   );

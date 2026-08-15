@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { motion, AnimatePresence } from 'framer-motion';
 import { validationService } from '../../services/validationService';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -68,21 +69,18 @@ export const QRScanner: React.FC = () => {
         html5QrCodeRef.current = new Html5Qrcode('qr-reader');
       }
 
-      // Avoid restarting if already scanning
       if (html5QrCodeRef.current.isScanning) return;
 
       await html5QrCodeRef.current.start(
-        { facingMode: 'environment' }, // Prefers rear camera on mobile devices
+        { facingMode: 'environment' },
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
         },
         async (decodedText) => {
-          // Cooldown check to prevent duplicate triggers
           if (isScanningCooldownRef.current) return;
           isScanningCooldownRef.current = true;
 
-          // 1. Immediately pause video stream processing to prevent spamming backend calls
           if (html5QrCodeRef.current) {
             try {
               html5QrCodeRef.current.pause(true);
@@ -94,7 +92,6 @@ export const QRScanner: React.FC = () => {
           setInputVal(decodedText);
           await processValidation(decodedText, TicketValidationMethod.QR_SCAN);
 
-          // 2. Automatically unfreeze/resume camera scanner after 2.5 seconds
           setTimeout(() => {
             isScanningCooldownRef.current = false;
             if (html5QrCodeRef.current) {
@@ -106,9 +103,7 @@ export const QRScanner: React.FC = () => {
             }
           }, 2500);
         },
-        () => {
-          // Frame callback on non-QR frame (can be safely ignored)
-        }
+        () => {}
       );
 
       setIsCameraActive(true);
@@ -133,12 +128,10 @@ export const QRScanner: React.FC = () => {
     }
   };
 
-  // Safe asynchronous camera lifecycle management
   useEffect(() => {
     let isCancelled = false;
 
     if (activeTab === 'qr') {
-      // Defer camera initialization to the next tick after DOM render completes
       const timer = setTimeout(() => {
         if (!isCancelled) {
           startCamera();
@@ -164,60 +157,77 @@ export const QRScanner: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="max-w-xl mx-auto space-y-6"
+    >
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Staff Gate Check-In</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Staff Gate Check-In</h1>
+        <p className="text-sm text-slate-500">
           Validate attendee access pass via live camera scan or manual ID.
         </p>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-slate-200/80 relative">
         <button
           type="button"
           onClick={() => handleTabChange('qr')}
-          className={`flex-1 py-2.5 text-center text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'qr'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+          className={`flex-1 py-3 text-center text-sm font-semibold relative transition-colors ${
+            activeTab === 'qr' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           📷 Live Camera Scan
+          {activeTab === 'qr' && (
+            <motion.div
+              layoutId="activeTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full"
+            />
+          )}
         </button>
         <button
           type="button"
           onClick={() => handleTabChange('manual')}
-          className={`flex-1 py-2.5 text-center text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'manual'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+          className={`flex-1 py-3 text-center text-sm font-semibold relative transition-colors ${
+            activeTab === 'manual' ? 'text-emerald-700' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          ⌨️ Manual Ticket ID
+          Manual Ticket ID
+          {activeTab === 'manual' && (
+            <motion.div
+              layoutId="activeTabUnderline"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full"
+            />
+          )}
         </button>
       </div>
 
       {/* Camera / Manual Input Card */}
-      <Card>
+      <Card className="border border-slate-200/80 shadow-xs rounded-2xl bg-white p-5">
         {activeTab === 'qr' ? (
           <div className="space-y-4 text-center">
-            {/* Camera Viewport Container */}
             <div
               id="qr-reader"
-              className="w-full overflow-hidden rounded-lg bg-gray-900 min-h-[280px]"
+              className="w-full overflow-hidden rounded-xl bg-slate-900 min-h-[280px]"
             />
 
             {cameraError && (
-              <p className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+              <p className="text-xs font-semibold text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200">
                 {cameraError}
               </p>
             )}
 
-            <div className="flex justify-between items-center text-xs text-gray-500 pt-2">
-              <span>Status: {isCameraActive ? '🟢 Camera Active' : '🔴 Camera Offline'}</span>
+            <div className="flex justify-between items-center text-xs text-slate-500 pt-2">
+              <span className="font-medium">
+                Status: {isCameraActive ? '🟢 Camera Active' : '🔴 Camera Offline'}
+              </span>
               {!isCameraActive && (
-                <Button onClick={startCamera}>
+                <Button
+                  onClick={startCamera}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-1.5"
+                >
                   Re-open Camera
                 </Button>
               )}
@@ -226,7 +236,7 @@ export const QRScanner: React.FC = () => {
         ) : (
           <form onSubmit={handleManualSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
                 Ticket UUID
               </label>
               <Input
@@ -236,7 +246,11 @@ export const QRScanner: React.FC = () => {
                 autoFocus
               />
             </div>
-            <Button type="submit" className="w-full" isLoading={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5"
+              isLoading={isSubmitting}
+            >
               Verify Pass Access
             </Button>
           </form>
@@ -244,44 +258,53 @@ export const QRScanner: React.FC = () => {
       </Card>
 
       {/* Result Status Display Banner */}
-      {result && (
-        <Card
-          className={`border-l-4 transition-all ${
-            result.status === TicketValidationEnum.VALID
-              ? 'border-l-green-500 bg-green-50'
-              : 'border-l-red-500 bg-red-50'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-3xl">
-              {result.status === TicketValidationEnum.VALID ? '✅' : '❌'}
-            </span>
-            <div className="space-y-1">
-              <h3
-                className={`font-bold text-lg ${
-                  result.status === TicketValidationEnum.VALID
-                    ? 'text-green-800'
-                    : 'text-red-800'
-                }`}
-              >
-                {result.status === TicketValidationEnum.VALID
-                  ? 'ACCESS GRANTED'
-                  : 'ACCESS DENIED'}
-              </h3>
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Card
+              className={`border-l-4 rounded-2xl p-5 shadow-xs transition-all ${
+                result.status === TicketValidationEnum.VALID
+                  ? 'border-l-emerald-500 bg-emerald-50/70 border border-emerald-200/80'
+                  : 'border-l-rose-500 bg-rose-50/70 border border-rose-200/80'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <span className="text-3xl">
+                  {result.status === TicketValidationEnum.VALID ? '✅' : '❌'}
+                </span>
+                <div className="space-y-1">
+                  <h3
+                    className={`font-extrabold text-lg tracking-tight ${
+                      result.status === TicketValidationEnum.VALID
+                        ? 'text-emerald-900'
+                        : 'text-rose-900'
+                    }`}
+                  >
+                    {result.status === TicketValidationEnum.VALID
+                      ? 'ACCESS GRANTED'
+                      : 'ACCESS DENIED'}
+                  </h3>
 
-              <p className="text-xs text-gray-600 font-mono">
-                Scanned ID: {result.ticketId || inputVal}
-              </p>
+                  <p className="text-xs text-slate-600 font-mono">
+                    Scanned ID: {result.ticketId || inputVal}
+                  </p>
 
-              {errorMessage && (
-                <p className="text-xs text-red-600 font-medium mt-1">
-                  Reason: {errorMessage}
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
-    </div>
+                  {errorMessage && (
+                    <p className="text-xs font-semibold text-rose-700 mt-1">
+                      Reason: {errorMessage}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };

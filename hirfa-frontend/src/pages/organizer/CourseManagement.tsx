@@ -57,7 +57,6 @@ export const CourseManagement: React.FC = () => {
     deleteEvent,
   } = useEvents();
 
-  // Safely extract the array whether the backend returns a flat array or a paginated Page object
   const eventsList: ListEventResponseDto[] = Array.isArray(managedEvents)
     ? managedEvents
     : (managedEvents as any)?.content || [];
@@ -143,101 +142,110 @@ export const CourseManagement: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setFormError(null);
+    e.preventDefault();
+    setFormError(null);
 
-  // 1. Explicit Frontend Validation
-  if (!formData.name?.trim()) {
-    setFormError('Event Name is required.');
-    return;
-  }
-  if (!formData.venue?.trim()) {
-    setFormError('Venue Location is required.');
-    return;
-  }
-
-  try {
-    const payload = {
-      ...formData,
-      start: formatLocalDateTime(formData.start),
-      end: formatLocalDateTime(formData.end),
-      salesStart: formatLocalDateTime(formData.salesStart || formData.start),
-      salesEnd: formatLocalDateTime(formData.salesEnd || formData.end),
-    };
-
-    if (editingEventId) {
-      await updateEvent({ id: editingEventId, data: payload });
-    } else {
-      await createEvent(payload);
+    if (!formData.name?.trim()) {
+      setFormError('Event Name is required.');
+      return;
+    }
+    if (!formData.venue?.trim()) {
+      setFormError('Venue Location is required.');
+      return;
     }
 
-    setIsModalOpen(false);
-  } catch (err: any) {
-    console.error('Create Event Error:', err);
-    const backendError =
-      err?.response?.data?.message || err?.response?.data?.error || 'Failed to save event.';
-    setFormError(backendError);
-  }
-};
+    try {
+      const payload = {
+        ...formData,
+        start: formatLocalDateTime(formData.start),
+        end: formatLocalDateTime(formData.end),
+        salesStart: formatLocalDateTime(formData.salesStart || formData.start),
+        salesEnd: formatLocalDateTime(formData.salesEnd || formData.end),
+      };
+
+      if (editingEventId) {
+        await updateEvent({ id: editingEventId, data: payload });
+      } else {
+        await createEvent(payload);
+      }
+
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error('Create Event Error:', err);
+      const backendError =
+        err?.response?.data?.message || err?.response?.data?.error || 'Failed to save event.';
+      setFormError(backendError);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Organiser Dashboard</h1>
-          <p className="text-sm text-gray-500">Manage event listings and ticket pass availability.</p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Organiser Dashboard</h1>
+          <p className="text-sm text-slate-500">Manage event listings, schedules, and ticket pass tiers.</p>
         </div>
-        <Button onClick={handleOpenCreateModal}>+ Create New Event</Button>
+        <Button
+          onClick={handleOpenCreateModal}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
+        >
+          + Create New Event
+        </Button>
       </div>
 
       {isLoading ? (
-        <div className="p-8 text-center text-gray-500">Loading managed events...</div>
+        <div className="p-12 text-center text-slate-500 font-medium">Loading managed events...</div>
       ) : isError ? (
-        <div className="p-8 text-center text-red-600">Failed to load events. Please refresh.</div>
+        <div className="p-8 text-center text-rose-600 font-medium">Failed to load events. Please refresh.</div>
       ) : eventsList.length === 0 ? (
-        <div className="p-12 text-center rounded-lg border-2 border-dashed border-gray-200 bg-white">
-          <h3 className="text-sm font-semibold text-gray-900">No events found</h3>
-          <p className="mt-1 text-xs text-gray-500">Get started by creating your first event pass tier.</p>
-          <div className="mt-4">
-            <Button onClick={handleOpenCreateModal}>+ Create New Event</Button>
+        <div className="p-12 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-white shadow-xs">
+          <h3 className="text-base font-bold text-slate-900">No events found</h3>
+          <p className="mt-1 text-xs text-slate-500">Get started by creating your first workshop event pass tier.</p>
+          <div className="mt-5">
+            <Button
+              onClick={handleOpenCreateModal}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+            >
+              + Create New Event
+            </Button>
           </div>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {eventsList.map((event: ListEventResponseDto) => (
-            <Card key={event.id}>
-              <div className="flex items-start justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
+            <Card key={event.id} className="border border-slate-200/80 shadow-xs hover:shadow-md transition-all rounded-2xl bg-white p-5">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-lg font-bold text-slate-900 leading-snug">{event.name}</h3>
                 <span
-                  className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
                     event.status === EventStatusEnum.PUBLISHED
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                       : event.status === EventStatusEnum.CANCELLED
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-indigo-50 text-indigo-600'
+                      ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                      : 'bg-slate-100 text-slate-700 border border-slate-200'
                   }`}
                 >
                   {event.status || EventStatusEnum.DRAFT}
                 </span>
               </div>
-              <div className="mt-4 space-y-1 text-xs text-gray-500">
-                <p>Venue: {event.venue}</p>
-                <p>Start: {event.start ? new Date(event.start).toLocaleString() : 'TBA'}</p>
-                <p>End: {event.end ? new Date(event.end).toLocaleString() : 'TBA'}</p>
-                <p>Tiers: {event.ticketTypes ? event.ticketTypes.length : 0} configured</p>
+
+              <div className="mt-4 space-y-1.5 text-xs text-slate-600">
+                <p><strong className="text-slate-800">Venue:</strong> {event.venue}</p>
+                <p><strong className="text-slate-800">Start:</strong> {event.start ? new Date(event.start).toLocaleString() : 'TBA'}</p>
+                <p><strong className="text-slate-800">End:</strong> {event.end ? new Date(event.end).toLocaleString() : 'TBA'}</p>
+                <p><strong className="text-slate-800">Configured Tiers:</strong> {event.ticketTypes ? event.ticketTypes.length : 0}</p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2 mt-5 pt-3 border-t border-slate-100">
                 <button
                   onClick={() => handleOpenEditModal(event)}
-                  className="px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition-colors"
+                  className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200/60 hover:bg-emerald-100 transition-colors"
                 >
                   Edit Event
                 </button>
                 <button
                   onClick={() => handleDelete(event.id)}
-                  className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                  className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 rounded-lg border border-rose-200/60 hover:bg-rose-100 transition-colors"
                 >
                   Delete
                 </button>
@@ -247,6 +255,7 @@ export const CourseManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Create / Edit Event Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -254,7 +263,7 @@ export const CourseManagement: React.FC = () => {
       >
         <form onSubmit={handleSubmit} noValidate className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           {formError && (
-            <div className="rounded-md bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
+            <div className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200">
               {formError}
             </div>
           )}
@@ -273,15 +282,14 @@ export const CourseManagement: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
           />
 
-          {/* Event Status Selector */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Event Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatusEnum })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-900"
             >
               <option value={EventStatusEnum.DRAFT}>DRAFT</option>
               <option value={EventStatusEnum.PUBLISHED}>PUBLISHED</option>
@@ -307,16 +315,15 @@ export const CourseManagement: React.FC = () => {
             />
           </div>
 
-          {/* Dynamic Ticket Tiers Section */}
-          <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-3">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">
                 Ticket Tiers & Pricing
               </h4>
               <button
                 type="button"
                 onClick={handleAddTicketType}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-800 transition-colors"
               >
                 + Add Ticket Tier
               </button>
@@ -325,17 +332,17 @@ export const CourseManagement: React.FC = () => {
             {formData.ticketTypes.map((tier: any, index: number) => (
               <div
                 key={index}
-                className="rounded-lg border border-gray-200 bg-white p-3 space-y-3 shadow-sm relative"
+                className="rounded-xl border border-slate-200 bg-white p-3.5 space-y-3 shadow-xs relative"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-gray-500">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     Tier #{index + 1}
                   </span>
                   {formData.ticketTypes.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveTicketType(index)}
-                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
+                      className="text-xs font-semibold text-rose-500 hover:text-rose-700 transition-colors"
                     >
                       Remove
                     </button>
@@ -345,7 +352,7 @@ export const CourseManagement: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <Input
                     label="Pass Name"
-                    placeholder="e.g. VIP, Student, Standard"
+                    placeholder="e.g. VIP, Standard"
                     required
                     value={tier.name || ''}
                     onChange={(e) => handleTicketTypeChange(index, 'name', e.target.value)}
@@ -374,7 +381,11 @@ export const CourseManagement: React.FC = () => {
             ))}
           </div>
 
-          <Button type="submit" className="w-full" isLoading={isCreating || isUpdating}>
+          <Button
+            type="submit"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 mt-2"
+            isLoading={isCreating || isUpdating}
+          >
             {editingEventId ? 'Save Changes' : 'Save & Publish Event'}
           </Button>
         </form>
