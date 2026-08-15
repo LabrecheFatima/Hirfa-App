@@ -57,6 +57,11 @@ export const CourseManagement: React.FC = () => {
     deleteEvent,
   } = useEvents();
 
+  // Safely extract the array whether the backend returns a flat array or a paginated Page object
+  const eventsList: ListEventResponseDto[] = Array.isArray(managedEvents)
+    ? managedEvents
+    : (managedEvents as any)?.content || [];
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -73,7 +78,6 @@ export const CourseManagement: React.FC = () => {
     setEditingEventId(event.id);
     setFormError(null);
 
-    // Map ALL ticket types associated with the event
     const mappedTicketTypes =
       event.ticketTypes && event.ticketTypes.length > 0
         ? event.ticketTypes.map((tt: any) => ({
@@ -107,7 +111,6 @@ export const CourseManagement: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Helper functions to manage multiple ticket tiers
   const handleAddTicketType = () => {
     setFormData({
       ...formData,
@@ -119,7 +122,7 @@ export const CourseManagement: React.FC = () => {
   };
 
   const handleRemoveTicketType = (index: number) => {
-    if (formData.ticketTypes.length === 1) return; // Keep at least one tier
+    if (formData.ticketTypes.length === 1) return;
     const updated = formData.ticketTypes.filter((_: any, i: number) => i !== index);
     setFormData({ ...formData, ticketTypes: updated });
   };
@@ -140,30 +143,42 @@ export const CourseManagement: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
+  e.preventDefault();
+  setFormError(null);
 
-    try {
-      const payload = {
-        ...formData,
-        start: formatLocalDateTime(formData.start),
-        end: formatLocalDateTime(formData.end),
-        salesStart: formatLocalDateTime(formData.salesStart),
-        salesEnd: formatLocalDateTime(formData.salesEnd),
-      };
+  // 1. Explicit Frontend Validation
+  if (!formData.name?.trim()) {
+    setFormError('Event Name is required.');
+    return;
+  }
+  if (!formData.venue?.trim()) {
+    setFormError('Venue Location is required.');
+    return;
+  }
 
-      if (editingEventId) {
-        await updateEvent({ id: editingEventId, data: payload });
-      } else {
-        await createEvent(payload);
-      }
+  try {
+    const payload = {
+      ...formData,
+      start: formatLocalDateTime(formData.start),
+      end: formatLocalDateTime(formData.end),
+      salesStart: formatLocalDateTime(formData.salesStart || formData.start),
+      salesEnd: formatLocalDateTime(formData.salesEnd || formData.end),
+    };
 
-      setIsModalOpen(false);
-    } catch (err: any) {
-      const backendError = err?.response?.data?.error || 'Failed to save event.';
-      setFormError(backendError);
+    if (editingEventId) {
+      await updateEvent({ id: editingEventId, data: payload });
+    } else {
+      await createEvent(payload);
     }
-  };
+
+    setIsModalOpen(false);
+  } catch (err: any) {
+    console.error('Create Event Error:', err);
+    const backendError =
+      err?.response?.data?.message || err?.response?.data?.error || 'Failed to save event.';
+    setFormError(backendError);
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -179,9 +194,17 @@ export const CourseManagement: React.FC = () => {
         <div className="p-8 text-center text-gray-500">Loading managed events...</div>
       ) : isError ? (
         <div className="p-8 text-center text-red-600">Failed to load events. Please refresh.</div>
+      ) : eventsList.length === 0 ? (
+        <div className="p-12 text-center rounded-lg border-2 border-dashed border-gray-200 bg-white">
+          <h3 className="text-sm font-semibold text-gray-900">No events found</h3>
+          <p className="mt-1 text-xs text-gray-500">Get started by creating your first event pass tier.</p>
+          <div className="mt-4">
+            <Button onClick={handleOpenCreateModal}>+ Create New Event</Button>
+          </div>
+        </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {managedEvents.map((event: ListEventResponseDto) => (
+          {eventsList.map((event: ListEventResponseDto) => (
             <Card key={event.id}>
               <div className="flex items-start justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">{event.name}</h3>
@@ -198,10 +221,10 @@ export const CourseManagement: React.FC = () => {
                 </span>
               </div>
               <div className="mt-4 space-y-1 text-xs text-gray-500">
-                <p>📍 Venue: {event.venue}</p>
-                <p>📅 Start: {event.start ? new Date(event.start).toLocaleString() : 'TBA'}</p>
-                <p>🏁 End: {event.end ? new Date(event.end).toLocaleString() : 'TBA'}</p>
-                <p>🎟️ Tiers: {event.ticketTypes ? event.ticketTypes.length : 0} configured</p>
+                <p>Venue: {event.venue}</p>
+                <p>Start: {event.start ? new Date(event.start).toLocaleString() : 'TBA'}</p>
+                <p>End: {event.end ? new Date(event.end).toLocaleString() : 'TBA'}</p>
+                <p>Tiers: {event.ticketTypes ? event.ticketTypes.length : 0} configured</p>
               </div>
 
               {/* Action Buttons */}
@@ -229,7 +252,7 @@ export const CourseManagement: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         title={editingEventId ? 'Edit Event' : 'Create New Event'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           {formError && (
             <div className="rounded-md bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
               {formError}

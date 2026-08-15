@@ -1,37 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '../services/eventService';
-import type { ListPublishedEventResponseDto } from '../types';
+import type { CreateEventRequestDto } from '../types';
 
-export const useEvents = () => {
-  const [events, setEvents] = useState<ListPublishedEventResponseDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
+export const useEvents = (options?: { fetchManaged?: boolean }) => {
+  const queryClient = useQueryClient();
+  const fetchManaged = options?.fetchManaged ?? true;
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setIsLoading(true);
-        setIsError(false);
+  // 1. Fetch Events
+  const query = useQuery({
+    queryKey: ['events', fetchManaged],
+    queryFn: () => (fetchManaged ? eventService.getManagedEvents() : eventService.getPublishedEvents()),
+  });
 
-        // Call the public published events service
-        const data = await eventService.getPublishedEvents();
+  // 2. Create Event Mutation
+  const createMutation = useMutation({
+    mutationFn: (data: CreateEventRequestDto) => eventService.createEvent(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
 
-        // This safely extracts the array whether it's wrapped in 'content' or a direct array
-        const eventList = Array.isArray(data)
-          ? data
-          : (data as any)?.content || [];
+  // 3. Update Event Mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateEventRequestDto> }) =>
+      eventService.updateEvent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
 
-        setEvents(eventList);
-      } catch (err) {
-        console.error('Failed to fetch published events in useEvents hook:', err);
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // 4. Delete Event Mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => eventService.deleteEvent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+  });
 
-    fetchEvents();
-  }, []);
+  return {
+    events: query.data || [],
+    managedEvents: query.data || [],
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
 
-  return { events, isLoading, isError };
+    // Bind mutateAsync so async/await works in CourseManagement.tsx
+    createEvent: createMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+
+    updateEvent: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
+
+    deleteEvent: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
+  };
 };

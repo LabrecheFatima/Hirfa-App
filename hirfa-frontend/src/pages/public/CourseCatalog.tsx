@@ -64,6 +64,11 @@ export const CourseCatalog: React.FC = () => {
 
     if (!selectedEvent || !selectedTier) return;
 
+    if (selectedTier.price < 50) {
+      setCheckoutError('Chargily payments require a minimum ticket price of 50 DZD.');
+      return;
+    }
+
     try {
       setCheckoutError(null);
       const res = await purchaseTicket({
@@ -75,7 +80,12 @@ export const CourseCatalog: React.FC = () => {
         window.location.href = res.checkoutUrl;
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.error || 'Failed to initiate payment checkout.';
+      console.error('Checkout failed:', err);
+      // Extract specific backend/Chargily error messages
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Failed to initiate Chargily payment checkout.';
       setCheckoutError(msg);
     }
   };
@@ -208,9 +218,11 @@ export const CourseCatalog: React.FC = () => {
             >
               {isStaff
                 ? 'Staff Accounts Cannot Purchase Passes'
-                : authenticated
-                ? 'Proceed to Chargily Checkout'
-                : 'Login to Purchase'}
+                : !authenticated
+                ? 'Login to Purchase'
+                : (selectedTier?.price ?? 0) < 50
+                ? 'Minimum Price Required for Online Checkout (50 DZD)'
+                : 'Proceed to Chargily Checkout'}
             </Button>
           </div>
         )}

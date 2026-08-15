@@ -33,6 +33,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(authorize -> authorize
                         // Public endpoints
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/published-events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/payments/chargily/webhook").permitAll()
 
