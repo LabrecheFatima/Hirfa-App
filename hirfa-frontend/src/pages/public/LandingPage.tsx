@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 import { Role } from '../../types';
 
 // Motion Animation Variants
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 25 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
 };
@@ -54,7 +54,6 @@ export const LandingPage: React.FC = () => {
       title: 'Tailoring & Sewing',
       subtitle: 'فن الخياطة والتفصيل',
       category: 'Textile Craftsmanship',
-      // Verified direct Unsplash image featuring dress mannequin, tailoring atelier & pattern drafting
       image: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800&auto=format&fit=crop',
       description:
         'Learn custom pattern drafting, fabric selection, garment fitting, industrial machine operation, and fine embroidery detailing.',
@@ -178,7 +177,6 @@ export const LandingPage: React.FC = () => {
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     onError={(e) => {
-                      // High-reliability secondary fallback URL
                       (e.target as HTMLImageElement).src =
                         'https://images.unsplash.com/photo-1537832816519-689ad163238b?q=80&w=800&auto=format&fit=crop';
                     }}
@@ -279,7 +277,7 @@ export const LandingPage: React.FC = () => {
                       variant="outline"
                       className="border-white !text-white hover:!bg-emerald-700 px-6 py-3 text-sm font-bold"
                     >
-                      Manage My Events
+                      Manage My Courses
                     </Button>
                   </motion.div>
                 </Link>

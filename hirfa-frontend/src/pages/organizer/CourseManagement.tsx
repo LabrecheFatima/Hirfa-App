@@ -183,30 +183,30 @@ export const CourseManagement: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Organiser Dashboard</h1>
-          <p className="text-sm text-slate-500">Manage event listings, schedules, and ticket pass tiers.</p>
+          <p className="text-sm text-slate-500">Manage course listings, schedules, and ticket pass tiers.</p>
         </div>
         <Button
           onClick={handleOpenCreateModal}
           className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-xs"
         >
-          + Create New Event
+          + Create New Course
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="p-12 text-center text-slate-500 font-medium">Loading managed events...</div>
+        <div className="p-12 text-center text-slate-500 font-medium">Loading managed courses...</div>
       ) : isError ? (
-        <div className="p-8 text-center text-rose-600 font-medium">Failed to load events. Please refresh.</div>
+        <div className="p-8 text-center text-rose-600 font-medium">Failed to load courses. Please refresh.</div>
       ) : eventsList.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-white shadow-xs">
-          <h3 className="text-base font-bold text-slate-900">No events found</h3>
-          <p className="mt-1 text-xs text-slate-500">Get started by creating your first workshop event pass tier.</p>
+          <h3 className="text-base font-bold text-slate-900">No courses found</h3>
+          <p className="mt-1 text-xs text-slate-500">Get started by creating your first workshop course pass tier.</p>
           <div className="mt-5">
             <Button
               onClick={handleOpenCreateModal}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
             >
-              + Create New Event
+              + Create New Course
             </Button>
           </div>
         </div>
@@ -241,7 +241,7 @@ export const CourseManagement: React.FC = () => {
                   onClick={() => handleOpenEditModal(event)}
                   className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200/60 hover:bg-emerald-100 transition-colors"
                 >
-                  Edit Event
+                  Edit Course
                 </button>
                 <button
                   onClick={() => handleDelete(event.id)}
@@ -255,11 +255,11 @@ export const CourseManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Create / Edit Event Modal */}
+      {/* Create / Edit Course Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingEventId ? 'Edit Event' : 'Create New Event'}
+        title={editingEventId ? 'Edit Course' : 'Create New Course'}
       >
         <form onSubmit={handleSubmit} noValidate className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           {formError && (
@@ -269,7 +269,7 @@ export const CourseManagement: React.FC = () => {
           )}
 
           <Input
-            label="Event Name"
+            label="Course Name"
             required
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -284,7 +284,7 @@ export const CourseManagement: React.FC = () => {
 
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">
-              Event Status
+              Course Status
             </label>
             <select
               value={formData.status}
@@ -300,14 +300,14 @@ export const CourseManagement: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Event Start"
+              label="Course Start"
               type="datetime-local"
               required
               value={formData.start || ''}
               onChange={(e) => setFormData({ ...formData, start: e.target.value })}
             />
             <Input
-              label="Event End"
+              label="Course End"
               type="datetime-local"
               required
               value={formData.end || ''}
@@ -386,7 +386,7 @@ export const CourseManagement: React.FC = () => {
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 mt-2"
             isLoading={isCreating || isUpdating}
           >
-            {editingEventId ? 'Save Changes' : 'Save & Publish Event'}
+            {editingEventId ? 'Save Changes' : 'Save & Publish Course'}
           </Button>
         </form>
       </Modal>

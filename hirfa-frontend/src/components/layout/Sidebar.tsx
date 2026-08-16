@@ -20,7 +20,7 @@ export const Sidebar: React.FC = () => {
           Main Menu
         </div>
         <NavLink to="/events" className={navItemClass}>
-          Browse Events
+          Browse Courses
         </NavLink>
 
         {/* Hide ticket wallet link for Staff members */}

@@ -122,7 +122,7 @@ export const CourseCatalog: React.FC = () => {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Event & Workshop Catalog</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Course & Workshop Catalog</h1>
           <p className="text-sm text-slate-500">Discover available sessions and ticket passes.</p>
         </div>
         <div className="w-full sm:w-72">

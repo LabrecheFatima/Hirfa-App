@@ -33,7 +33,7 @@ export const Navbar: React.FC = () => {
                   : 'text-slate-600 hover:text-emerald-600 hover:bg-slate-50'
               }`}
             >
-              Explore Events
+              Explore Courses
             </Link>
 
             {/* Show My Tickets only to Non-Staff users */}
