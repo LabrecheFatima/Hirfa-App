@@ -19,7 +19,7 @@ import { QRScanner } from './pages/staff/QRScanner';
 
 export function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Hirfa-App">
       <Routes>
         {/* Public Routes */}
         <Route
