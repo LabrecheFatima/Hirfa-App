@@ -26,6 +26,11 @@ jobs:
           cd hirfa-frontend
           npm ci
           npm run build
+        env:
+          VITE_KEYCLOAK_URL: https://your-keycloak-domain.com
+          VITE_KEYCLOAK_REALM: hirfa-realm
+          VITE_KEYCLOAK_CLIENT_ID: hirfa-frontend
+          VITE_API_BASE_URL: https://your-backend-api.com
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
