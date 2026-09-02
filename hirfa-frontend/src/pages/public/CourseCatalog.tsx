@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEvents } from '../../hooks/useEvents';
+import { usePublishedEvents } from '../../hooks/useEvents';
 import { useTickets } from '../../hooks/useTickets';
 import { useAuth } from '../../hooks/useAuth';
 import { eventService } from '../../services/eventService';
@@ -12,7 +12,7 @@ import { Modal } from '../../components/ui/Modal';
 import type { ListPublishedEventResponseDto, GetPublishedEventTicketTypeResponseDto } from '../../types';
 
 export const CourseCatalog: React.FC = () => {
-  const { events, isLoading, isError } = useEvents();
+  const { data: events, isLoading, isError } = usePublishedEvents();
   const { purchaseTicket, isPurchasing } = useTickets();
   const { authenticated, login, roles } = useAuth();
   const isStaff = roles.map((r) => r.toUpperCase()).includes('STAFF');

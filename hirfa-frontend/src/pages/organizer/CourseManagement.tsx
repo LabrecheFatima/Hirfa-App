@@ -146,11 +146,15 @@ export const CourseManagement: React.FC = () => {
     setFormError(null);
 
     if (!formData.name?.trim()) {
-      setFormError('Event Name is required.');
+      setFormError('Course Name is required.');
       return;
     }
     if (!formData.venue?.trim()) {
       setFormError('Venue Location is required.');
+      return;
+    }
+    if (formData.start && formData.end && new Date(formData.end) <= new Date(formData.start)) {
+      setFormError('Course End date & time must be after Course Start date & time.');
       return;
     }
 
@@ -261,7 +265,7 @@ export const CourseManagement: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         title={editingEventId ? 'Edit Course' : 'Create New Course'}
       >
-        <form onSubmit={handleSubmit} noValidate className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {formError && (
             <div className="rounded-xl bg-rose-50 p-3 text-xs font-semibold text-rose-700 border border-rose-200">
               {formError}
