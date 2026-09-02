@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss()],
+  base: '/hirfa-platform/',
   server: {
     port: 3000,
   }
